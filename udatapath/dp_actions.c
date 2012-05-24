@@ -615,6 +615,25 @@ dp_actions_output_port(struct packet *pkt, uint32_t out_port, uint32_t out_queue
                 
                 struct ofl_match *m = xmalloc (sizeof(struct ofl_match));
                 ofl_structs_match_init(m);
+                
+                /* 
+                 * We need the whole ofl_match, let's redo the parsing.
+                 */
+                struct protocols_std * pkt_proto = xmalloc (sizeof(struct protocols_std));
+                struct hmap * aux_hmap;
+                
+                hmap_init(aux_hmap);
+
+                nblink_packet_parse(pkt->buffer, aux_hmap, pkt_proto);
+
+                ofl_structs_match_convert_pktf2oflm(aux_hmap, &m->match_fields);
+
+                //TODO: properly destroy hmap
+
+                hmap_destroy(aux_hmap);
+                
+                free(pkt_proto);
+                                
                 /* In this implementation the fields in_port and in_phy_port 
                 always will be the same, because we are not considering logical
                 ports                                 */

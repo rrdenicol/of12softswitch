@@ -32,6 +32,7 @@
 #include "ofl-structs.h"
 #include "lib/hash.h"
 #include "oxm-match.h"
+#include "nbee_link/nbee_link.h"
 
 
 void
@@ -199,6 +200,28 @@ void ofl_structs_match_put_ipv6m(struct ofl_match *match, uint32_t header, const
     memcpy(m->value + len, &mask, len);
     hmap_insert(&match->match_fields,&m->hmap_node,hash_int(header, 0));
     match->header.length += len*2 + 4;
+
+}
+
+void ofl_structs_match_convert_pktf2oflm(struct hmap * hmap_packet_fields, struct hmap * hmap_ofl_match)
+/*
+* Used to convert between a hmap of "struct packet_fields" to "struct ofl_match"
+*/
+{
+    struct packet_fields *iter;
+    
+    HMAP_FOR_EACH(iter,struct packet_fields, hmap_node, hmap_packet_fields)
+    {
+        struct ofl_match_tlv * new_entry = (struct ofl_match_tlv *) malloc(sizeof(struct ofl_match_tlv));
+        
+        new_entry->header = iter->header;
+        new_entry->value = (uint8_t *) malloc(OXM_LENGTH(new_entry->header));
+        
+        memcpy(new_entry->value, iter->value,OXM_LENGTH(new_entry->header));
+        
+        hmap_insert_fast(hmap_ofl_match, &new_entry->hmap_node,
+        hash_int(new_entry->header, 0));
+    }
 
 }
 
